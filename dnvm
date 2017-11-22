@@ -58,6 +58,10 @@ shift "$((OPTIND-1))"
 # Positional arguments
 TAG=$1
 CMD=$2
+#shift 2
+# ^^ this could be used to "relay" additional args to `run`
+# something like `dnvm -v 2.0-sdk bash -e SOME_VAR=value`
+# just would need to add $@ to the end of the run command
 
 if [ -z "$TAG" ]; then
   TAG=$DEFAULT
@@ -75,7 +79,8 @@ fi
 
 if [[ -z "$QUIET" && -n "$VERBOSE" ]]; then
   # Placeholder for verbose messages
-  echo "Starting dotnet image with tag: $TAG in $TARGET (running ${CMD:-default CMD})"
+  echo "ARGS: ${@}"
+  echo "Starting container with tag: $TAG in $TARGET (running ${CMD:-default CMD})"
 fi
 
 docker run -it --rm -v $TARGET:/app -w /app $IMAGE:$TAG $CMD
