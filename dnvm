@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+DEFAULT="latest"
+OPTIND=1
+IMAGE="microsoft/dotnet"
+TARGET=$PWD
+MSG="default CMD"
+
+show_help () {
+  cat << EOF
+  A dirty Docker trick to recreate the old DNVM utility
+
+  Usage:  dnvm [OPTIONS] <tag-name>
+    The tag name will be used to run an interactive container matching that tag
+  Arguments:
+    -h          Show this help
+    -l          Lists available tags (there's usually *a lot*)
+    -v          Adds more verbose output
+    -q          Quietens output (handy for scripting)
+    -d <dir>    Set the working directory (defaults to current dir)
+    -i <image>  The image to use (no tag). Defaults to `microsoft/dotnet`
+EOF
+}
+
+list_tags () {
+  if [ -z $QUIET ]; then
+    echo "Fetching available tags for $IMAGE:"
+  fi
+  wget -q https://registry.hub.docker.com/v1/repositories/$IMAGE/tags -O -  | sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' | tr '}' '\n'  | awk -F: '{print $3}'
+}
+
+while getopts :h?lqvd:i: opt; do
+  case $opt in
+    i)
+      IMAGE=$OPTARG
+      ;;
+    q)
+      QUIET=1
+      ;;
+    v)
+      VERBOSE=1
+      ;;
+    l)
+      LIST_ONLY=1
+      ;;
+    d)
+      TARGET=$OPTARG
+      ;;
+    h|\?)
+      show_help
+      exit 0
+      ;;
+  esac
+  #TAG=${@:$OPTIND:1}
+  #CMD=${@:$OPTIND+1:1}  
+done
+shift "$((OPTIND-1))"
+
+# Positional arguments
+TAG=$1
+CMD=$2
+
+if [ -z "$TAG" ]; then
+  TAG=$DEFAULT
+fi
+if [ "$TAG" = "json" ]; then
+  TAG="1.1.0-sdk-projectjson"
+fi
+
+# Command Logic
+
+if [ "$LIST_ONLY" ]; then
+  list_tags
+  exit 0
+fi
+
+if [[ -z "$QUIET" && -n "$VERBOSE" ]]; then
+  # Placeholder for verbose messages
+  echo "Starting dotnet image with tag: $TAG in $TARGET (running ${CMD:-default CMD})"
+fi
+
+docker run -it --rm -v $TARGET:/app -w /app $IMAGE:$TAG $CMD
