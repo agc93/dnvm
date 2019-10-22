@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 DEFAULT="latest"
 OPTIND=1
-IMAGE="microsoft/dotnet"
+#IMAGE="microsoft/dotnet"
+IMAGE="sdk"
+REPOSITORY="mcr.microsoft.com/dotnet/core"
 TARGET=$PWD
 MSG="default CMD"
 
@@ -17,7 +19,8 @@ show_help () {
     -v          Adds more verbose output
     -q          Quietens output (handy for scripting)
     -d <dir>    Set the working directory (defaults to current dir)
-    -i <image>  The image to use (no tag). Defaults to `microsoft/dotnet`
+    -i <image>  The image to use (no tag). Defaults to `sdk`
+    -r <repo>   The repository to use (no image). Defaults to `mcr.microsoft.com/dotnet/core`
 EOF
 }
 
@@ -28,8 +31,11 @@ list_tags () {
   wget -q https://registry.hub.docker.com/v1/repositories/$IMAGE/tags -O -  | sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' | tr '}' '\n'  | awk -F: '{print $3}'
 }
 
-while getopts :h?lqvd:i: opt; do
+while getopts :h?lqvd:i:r: opt; do
   case $opt in
+    r)
+      REPOSITORY=$OPTARG
+      ;;
     i)
       IMAGE=$OPTARG
       ;;
@@ -83,4 +89,4 @@ if [[ -z "$QUIET" && -n "$VERBOSE" ]]; then
   echo "Starting container with tag: $TAG in $TARGET (running ${CMD:-default CMD})"
 fi
 
-docker run -it --rm -v $TARGET:/app -w /app $IMAGE:$TAG $CMD
+docker run -it --rm -v $TARGET:/app -w /app $REPOSITORY/$IMAGE:$TAG $CMD
